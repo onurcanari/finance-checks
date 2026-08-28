@@ -1,0 +1,22 @@
+'use client';
+
+import { useEffect, useMemo, useState } from 'react';
+import { Header, movement } from '../components';
+
+const periods = [['weekly', 'Haftalık'], ['monthly', 'Aylık'], ['3m', '3 Aylık'], ['6m', '6 Aylık'], ['ytd', 'Yılbaşından itibaren'], ['1y', '1 Yıllık'], ['3y', '3 Yıllık'], ['5y', '5 Yıllık']];
+const formatValue = (value) => typeof value === 'number' ? `${value > 0 ? '+' : ''}${value.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%` : value ?? '—';
+
+function MetricIcon({ type }) { return <span className={`metric-icon metric-icon-${type}`} aria-hidden="true">{type === 'top' ? '↗' : type === 'breadth' ? '◒' : '◈'}</span>; }
+
+export default function MetricsPage() {
+  const [data, setData] = useState(); const [period, setPeriod] = useState('monthly'); const [status, setStatus] = useState('BAĞLANIYOR...');
+  const load = async () => { setStatus('CANLI VERİ ÇEKİLİYOR...'); try { const response = await fetch('/api/market-comparison', { cache: 'no-store' }); const payload = await response.json(); if (!response.ok || payload.error) throw Error(payload.error); setData(payload); setStatus(`CANLI · ${new Date(payload.updatedAt).toLocaleTimeString('tr-TR')}`); } catch { setData(undefined); setStatus('CANLI VERİ KULLANILAMIYOR'); } };
+  useEffect(() => { load(); }, []);
+  const rows = data?.periods?.[period] || []; const highlights = data?.highlights || [];
+  const max = useMemo(() => Math.max(...rows.map((row) => Math.abs(Number(row.value))).filter(Number.isFinite), 0), [rows]);
+  return <main className="shell metrics-page"><Header active="KARŞILAŞTIRMA" stamp="TÜRKİYE PİYASA KARŞILAŞTIRMASI / CANLI" />
+    <section className="metrics-hero"><div><div className="eyebrow">PİYASA PUSULASI / PERFORMANS</div><h1>Varlıklarını<br /><em>karşılaştır.</em></h1><p>Farklı yatırım araçlarının dönemsel performansını tek ekranda izle.</p></div><div className="hero-mark" aria-hidden="true"><span>↗</span><i /></div></section>
+    <section className="period-panel panel" aria-label="Dönem seçimi"><div className="period-label"><span className="eyebrow">DÖNEM</span><span className="stamp">PERFORMANS %</span></div><div className="periods" role="group" aria-label="Karşılaştırma dönemi">{periods.map(([key, label]) => <button key={key} className={period === key ? 'active' : ''} aria-pressed={period === key} onClick={() => setPeriod(key)}>{label}</button>)}</div></section>
+    <div className="metrics-layout"><section className="panel comparison-card"><div className="panel-title"><span>PERFORMANS KARŞILAŞTIRMASI</span><span className="live-pill"><b>●</b> CANLI</span></div><div className="chart-head"><span>{periods.find(([key]) => key === period)?.[1].toUpperCase()}</span><span>DEĞER</span></div><div className="bars" aria-live="polite">{data ? rows.length ? rows.map((row) => { const value = Number(row.value); const width = max && Number.isFinite(value) ? Math.max(3, Math.abs(value) / max * 100) : 0; return <div className="bar-row" key={row.id}><div className="bar-name"><span className="asset-dot" /><b>{row.shortName || row.name}</b><small>{row.name !== row.shortName ? row.name : ''}</small></div><div className="bar-track"><span className={movement(value)} style={{ width: `${width}%` }} /></div><strong className={movement(value)}>{formatValue(row.value)}</strong></div>; }) : <p className="empty-state">Bu dönem için veri bulunamadı.</p> : <p className="empty-state">Piyasa verisi yükleniyor...</p>}</div><div className="chart-foot"><span>Kaynak: {data?.source || '—'}</span><span>Değerler değişebilir</span></div></section><aside className="highlight-stack" aria-label="Piyasa öne çıkanları">{highlights.length ? highlights.map((item, index) => <section className="metric-card panel" key={`${item.label}-${index}`}><MetricIcon type={index === 0 ? 'top' : index === 1 ? 'breadth' : 'signal'} /><div><div className="eyebrow">{item.label}</div><strong>{formatValue(item.value)}</strong><p>{item.detail}</p></div></section>) : <section className="metric-card panel"><MetricIcon type="signal" /><div><div className="eyebrow">ÖNE ÇIKANLAR</div><strong>—</strong><p>API verisi bekleniyor.</p></div></section>}</aside></div>
+    <div className="status"><span><b className="up">●</b> CANLI PİYASA VERİSİ</span><span>{status}</span><button onClick={load}>YENİLE</button></div><p className="foot">VERİ KAYNAĞI: {data?.source || 'API'} · SENTETİK DEĞER KULLANILMAZ.</p></main>;
+}
