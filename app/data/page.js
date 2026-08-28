@@ -1,0 +1,5 @@
+import { Header } from '../components';
+
+export default function DataPage() {
+  return <main className="shell"><Header active="DATA SOURCE" stamp="DATA PROVENANCE" /><section className="hero"><div className="eyebrow">CURRENT DATA</div><h1>LIVE PRICES ONLY</h1><p>Bu panel yalnızca canlı fiyat verisinden türetilen göstergeleri gösterir. Veri alınamazsa değer gösterilmez.</p></section><div className="source-grid"><section className="panel"><div className="panel-title">SOURCE</div><div className="insight"><p><b>Yahoo Finance chart API</b></p><p>SPY, sektör ETF’leri, asset-class ETF’leri ve thematic ETF’ler.</p></div></section><section className="panel"><div className="panel-title">CALCULATIONS</div><div className="insight"><p><b>1D / 5D</b> fiyat getirisi</p><p><b>RS vs SPY</b> sektör 1D getirisi eksi SPY 1D getirisi</p><p><b>Rotation score</b> yalnızca bu fiyat ölçümlerinden hesaplanır.</p></div></section><section className="panel"><div className="panel-title">REFRESH</div><div className="insight"><p>Manuel Refresh, API’den yeni snapshot çeker.</p><p>Next endpoint: <b>/api/market-snapshot</b></p></div></section></div></main>;
+}
