@@ -211,9 +211,9 @@ function makeHighlights(periods) {
   const leader = focusRows.reduce((best, row) => (row.value > best.value ? row : best));
   const positive = focusRows.filter((row) => row.value > 0).length;
   return [
-    { label: 'EN İYİ PERFORMANS', value: leader.value, detail: leader.name },
-    { label: 'POZİTİF VARLIK SAYISI', value: positive, detail: `${focusRows.length} geçerli varlık içinde` },
-    { label: 'AYLIK LİDER', value: leader.value, detail: `${leader.name} · aylık değişim` },
+    { label: 'TOP PERFORMANCE', value: leader.value, detail: leader.name },
+    { label: 'POSITIVE ASSETS', value: positive, detail: `Among ${focusRows.length} valid assets` },
+    { label: 'MONTHLY LEADER', value: leader.value, detail: `${leader.name} · monthly change` },
   ];
 }
 
@@ -231,7 +231,7 @@ async function getEvdsSeries() {
 
 export async function GET() {
   const configs = [
-    { id: 'cpi', shortName: 'TÜFE', name: 'TÜFE · CPI index change', source: 'FRED (TURCPIALLMINMEI)', load: async () => parseFred(await fetchText(FRED_URL)) },
+    { id: 'cpi', shortName: 'CPI', name: 'CPI · index change', source: 'FRED (TURCPIALLMINMEI)', load: async () => parseFred(await fetchText(FRED_URL)) },
     { id: 'usdtry', shortName: 'USD/TRY', name: 'USD/TRY', source: 'Frankfurter server API', load: async () => {
       const end = new Date();
       const start = addMonths(end, -60);
@@ -239,11 +239,11 @@ export async function GET() {
       return parseFrankfurter(await fetchText(`${FRANKFURTER_URL}/${format(start)}..${format(end)}?from=USD&to=TRY`));
     } },
     { id: 'nasdaq', shortName: 'Nasdaq', name: 'Nasdaq Composite', source: 'Stooq (s=%5Eixic)', load: () => loadMarketData(`${STOOQ_URL}?s=%5Eixic&i=d`, '^IXIC', 'Stooq (s=%5Eixic)') },
-    { id: 'gold', shortName: 'Altın', name: 'Gold (XAU/USD)', source: 'Stooq (s=xauusd)', load: () => loadMarketData(`${STOOQ_URL}?s=xauusd&i=d`, 'GC=F', 'Stooq (s=xauusd)') },
+    { id: 'gold', shortName: 'Gold', name: 'Gold (XAU/USD)', source: 'Stooq (s=xauusd)', load: () => loadMarketData(`${STOOQ_URL}?s=xauusd&i=d`, 'GC=F', 'Stooq (s=xauusd)') },
     { id: 'bist', shortName: 'BIST 100', name: 'BIST 100', source: 'Yahoo Finance chart API', load: () => loadMarketData('https://stooq.com/q/d/l/?s=xu100&i=d', 'XU100.IS', 'Stooq (s=xu100)') },
   ];
   if (process.env.EVDS_API_KEY?.trim() && process.env.EVDS_DEPOSIT_SERIES?.trim()) {
-    configs.push({ id: 'deposit', shortName: 'Mevduat', name: 'Turkish deposit interest', source: 'EVDS (TCMB)', load: getEvdsSeries });
+    configs.push({ id: 'deposit', shortName: 'Deposit', name: 'Turkish deposit interest', source: 'EVDS (TCMB)', load: getEvdsSeries });
   }
 
   const loaded = (await Promise.all(configs.map(async (config) => {
