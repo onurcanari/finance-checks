@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-const SYMBOLS = ['TRY=X', 'XAUUSD=X', '^XU100'];
+const SYMBOLS = ['TRY=X', 'GC=F', '^XU100'];
 const GRAM_TROY = 31.1035;
 
 async function closes(symbol, signal) {
