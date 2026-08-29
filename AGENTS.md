@@ -15,3 +15,6 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 ## Deploy
 - Domain: https://teletext.onurcanari.com (Dokploy, sunucu 140.245.6.201 - Traefik 80/443)
 - Deploy komutu: project-deploy finance-checks
+
+## Option data
+Option data (used by `/api/options/*` routes): `TRADIER_API_KEY` env var required at runtime. Set in `.env.local` for local, in the deploy environment for production. Without it the routes return `500 {error: "config_missing"}`.
