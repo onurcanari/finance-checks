@@ -2,6 +2,14 @@
 
 Use English exclusively for all user-facing responses, code comments, documentation, and generated text unless the user explicitly asks otherwise.
 
+## Build & test
+
+- `npm install --include=dev` — install deps (this env's `omit=dev` would otherwise skip devDependencies, breaking `next build`)
+- `npm run build` — production build (catches routing, server/client boundary, and TypeScript errors)
+- `node --test app/lib/flow.test.js` — unit tests for the flow layer (pure helpers, no network)
+- `node scripts/smoke-flow.mjs` — integration smoke test for `/api/flow` and `/api/flow/breadth` with canned chart data; verifies the assembled JSON shape and ranking/breadth/RVOL invariants without depending on Yahoo
+- `npm run dev` then `curl -s http://127.0.0.1:3000/api/flow | head -c 200` — manual smoke against the live data source
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 # This is NOT the Next.js you know
