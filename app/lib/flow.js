@@ -180,6 +180,34 @@ export function extractVolumes(chartResult) {
   return quotes.volume.filter((value) => Number.isFinite(value));
 }
 
+// Build a row for a single ticker from its chart result. The shape mirrors
+// what the page renders: per-period returns, RVOL, and a "vs SPY" delta for
+// the 1M anchor period. Shared by both route handlers (/api/flow and
+// /api/flow/breadth) and exercised directly by scripts/smoke-flow.mjs so the
+// smoke test runs the real logic rather than a copy.
+export function buildRow(ticker, name, chart, spyReturn1m) {
+  if (!chart) {
+    return { ticker, name, return1w: null, return1m: null, return3m: null, rvol: null, vsSpy1m: null, unavailable: true };
+  }
+  const closes = extractCloses(chart);
+  const volumes = extractVolumes(chart);
+  const returns = computePeriodReturns(closes);
+  const rvol = computeRvol(volumes, 10);
+  const vsSpy1m = Number.isFinite(returns.return1m) && Number.isFinite(spyReturn1m)
+    ? returns.return1m - spyReturn1m
+    : null;
+  return {
+    ticker,
+    name,
+    return1w: returns.return1w,
+    return1m: returns.return1m,
+    return3m: returns.return3m,
+    rvol,
+    vsSpy1m,
+    bars: returns.bars,
+  };
+}
+
 // Group theme entries (from THEMES) by their sector via THEME_SECTORS. Themes
 // whose ticker is not in the map are skipped — the map is the source of truth.
 export function themesBySector() {

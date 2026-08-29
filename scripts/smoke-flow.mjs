@@ -10,10 +10,7 @@ import {
   THEMES,
   BENCHMARK,
   allTickers,
-  computeRvol,
-  computePeriodReturns,
-  extractCloses,
-  extractVolumes,
+  buildRow,
   themesBySector,
   THEME_SECTORS,
   classifyBreadth,
@@ -53,18 +50,9 @@ function makeChart(ticker) {
   };
 }
 
-// --- Reimplement the route's build logic in isolation (same shape) -------
-function buildRow(ticker, name, chart, spyReturn1m) {
-  if (!chart) return { ticker, name, return1w: null, return1m: null, return3m: null, rvol: null, vsSpy1m: null, unavailable: true };
-  const closes = extractCloses(chart);
-  const volumes = extractVolumes(chart);
-  const returns = computePeriodReturns(closes);
-  const rvol = computeRvol(volumes, 10);
-  const vsSpy1m = Number.isFinite(returns.return1m) && Number.isFinite(spyReturn1m)
-    ? returns.return1m - spyReturn1m
-    : null;
-  return { ticker, name, return1w: returns.return1w, return1m: returns.return1m, return3m: returns.return3m, rvol, vsSpy1m, bars: returns.bars };
-}
+// buildRow is imported from app/lib/flow.js (the same helper the route
+// handlers use) so the smoke test exercises the real production logic rather
+// than an inline copy.
 
 // Build the same chart set the route would build.
 const tickers = allTickers();

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Header, SourceBadge, movement, percent } from '../components';
+import { directionVerdict, classifyBreadth } from '../lib/flow.js';
 
 const PERIODS = [
   { key: '1W', label: '1 Week', days: 5 },
@@ -28,17 +29,23 @@ function rvolChip(rvol) {
 }
 
 function directionChip(vsSpy) {
-  if (!Number.isFinite(vsSpy)) return { label: '—', tone: 'muted' };
-  if (vsSpy >= 1) return { label: 'LEADING', tone: 'up' };
-  if (vsSpy <= -1) return { label: 'LAGGING', tone: 'down' };
-  return { label: 'INLINE', tone: 'muted' };
+  // Verdict comes from the shared lib helper so the board can't drift from
+  // the canonical ±1.0 thresholds; only the display label/tone lives here.
+  const verdict = directionVerdict(vsSpy);
+  if (verdict === 'Leading') return { label: 'LEADING', tone: 'up' };
+  if (verdict === 'Lagging') return { label: 'LAGGING', tone: 'down' };
+  if (verdict === 'Inline') return { label: 'INLINE', tone: 'muted' };
+  return { label: '—', tone: 'muted' };
 }
 
 function breadthChip(breadth, label) {
+  // Bucket falls back to the shared classifer when the route hasn't already
+  // resolved a label; the display text/tone is presentation-only.
+  const bucket = label || classifyBreadth(breadth);
   const text = label || (Number.isFinite(breadth) ? `${Math.round(breadth * 100)}%` : '—');
-  if (label === 'broad') return { label: `BROAD · ${text}`, tone: 'broad' };
-  if (label === 'mixed') return { label: `MIXED · ${text}`, tone: 'mixed' };
-  if (label === 'thin') return { label: `THIN · ${text}`, tone: 'thin' };
+  if (bucket === 'broad') return { label: `BROAD · ${text}`, tone: 'broad' };
+  if (bucket === 'mixed') return { label: `MIXED · ${text}`, tone: 'mixed' };
+  if (bucket === 'thin') return { label: `THIN · ${text}`, tone: 'thin' };
   return { label: text, tone: 'muted' };
 }
 
@@ -128,8 +135,10 @@ export default function FlowBoard({ period: initialPeriod, type: initialType }) 
   const showThemes = type === 'themes' || type === 'both';
 
   // --- Top strip --------------------------------------------------------
-  // "Money in"  -> top 3 sectors by vsSpy over the active period
-  // "Money out" -> bottom 3 sectors by vsSpy over the active period
+  // "Money in"  -> top 3 sectors sorted by the active period field
+  //                (return1w / return1m / return3m, NOT vsSpy — identical
+  //                only for the 1M anchor period)
+  // "Money out" -> bottom 3 sectors by the active period field
   // "Most-hedged" -> sector or theme with the highest RVOL
   const strip = useMemo(() => {
     if (!flow) return null;
@@ -254,6 +263,11 @@ export default function FlowBoard({ period: initialPeriod, type: initialType }) 
                   <tbody>
                     {rankedSectors.map((row, index) => {
                       const breadth = breadthByName.get(row.ticker);
+                      // Resolve each chip object once so the render isn't
+                      // recomputing the same chip 2-3x per row.
+                      const dirChip = directionChip(row.vsSpy1m);
+                      const rvol = rvolChip(row.rvol);
+                      const brChip = breadth ? breadthChip(breadth.breadth, breadth.breadthLabel) : null;
                       return (
                         <tr key={row.ticker} className={row.unavailable ? 'unavailable-row' : ''}>
                           <td><span className="flow-rank">{String(index + 1).padStart(2, '0')}</span></td>
@@ -263,19 +277,19 @@ export default function FlowBoard({ period: initialPeriod, type: initialType }) 
                             {formatPercent(rowValue(row, field))}
                           </td>
                           <td>
-                            <span className={`flow-chip flow-chip-${directionChip(row.vsSpy1m).tone}`}>
-                              {directionChip(row.vsSpy1m).label} {Number.isFinite(row.vsSpy1m) ? formatPercent(row.vsSpy1m) : ''}
+                            <span className={`flow-chip flow-chip-${dirChip.tone}`}>
+                              {dirChip.label} {Number.isFinite(row.vsSpy1m) ? formatPercent(row.vsSpy1m) : ''}
                             </span>
                           </td>
                           <td>
-                            <span className={`flow-chip flow-chip-${rvolChip(row.rvol).tone}`}>
-                              {rvolChip(row.rvol).label}
+                            <span className={`flow-chip flow-chip-${rvol.tone}`}>
+                              {rvol.label}
                             </span>
                           </td>
                           <td>
-                            {breadth ? (
-                              <span className={`flow-chip flow-chip-${breadthChip(breadth.breadth, breadth.breadthLabel).tone}`}>
-                                {breadthChip(breadth.breadth, breadth.breadthLabel).label}
+                            {brChip ? (
+                              <span className={`flow-chip flow-chip-${brChip.tone}`}>
+                                {brChip.label}
                               </span>
                             ) : <span className="flow-chip flow-chip-muted">—</span>}
                           </td>
@@ -307,26 +321,31 @@ export default function FlowBoard({ period: initialPeriod, type: initialType }) 
                     </tr>
                   </thead>
                   <tbody>
-                    {rankedThemes.map((row, index) => (
-                      <tr key={`${row.ticker}-${row.name}-${index}`} className={row.unavailable ? 'unavailable-row' : ''}>
-                        <td><span className="flow-rank">{String(index + 1).padStart(2, '0')}</span></td>
-                        <td><b>{row.ticker}</b> <SourceBadge source="yahoo" date={flow?.generatedAt} fetchedAt={flow?.generatedAt} label={`${row.ticker} ${row.name} theme flow data`} /></td>
-                        <td>{row.name}</td>
-                        <td className={row[field] != null ? movement(row[field]) : ''}>
-                          {formatPercent(rowValue(row, field))}
-                        </td>
-                        <td>
-                          <span className={`flow-chip flow-chip-${directionChip(row.vsSpy1m).tone}`}>
-                            {directionChip(row.vsSpy1m).label} {Number.isFinite(row.vsSpy1m) ? formatPercent(row.vsSpy1m) : ''}
-                          </span>
-                        </td>
-                        <td>
-                          <span className={`flow-chip flow-chip-${rvolChip(row.rvol).tone}`}>
-                            {rvolChip(row.rvol).label}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
+                    {rankedThemes.map((row, index) => {
+                      // Resolve each chip object once per row (see sectors).
+                      const dirChip = directionChip(row.vsSpy1m);
+                      const rvol = rvolChip(row.rvol);
+                      return (
+                        <tr key={`${row.ticker}-${row.name}-${index}`} className={row.unavailable ? 'unavailable-row' : ''}>
+                          <td><span className="flow-rank">{String(index + 1).padStart(2, '0')}</span></td>
+                          <td><b>{row.ticker}</b> <SourceBadge source="yahoo" date={flow?.generatedAt} fetchedAt={flow?.generatedAt} label={`${row.ticker} ${row.name} theme flow data`} /></td>
+                          <td>{row.name}</td>
+                          <td className={row[field] != null ? movement(row[field]) : ''}>
+                            {formatPercent(rowValue(row, field))}
+                          </td>
+                          <td>
+                            <span className={`flow-chip flow-chip-${dirChip.tone}`}>
+                              {dirChip.label} {Number.isFinite(row.vsSpy1m) ? formatPercent(row.vsSpy1m) : ''}
+                            </span>
+                          </td>
+                          <td>
+                            <span className={`flow-chip flow-chip-${rvol.tone}`}>
+                              {rvol.label}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -336,7 +355,7 @@ export default function FlowBoard({ period: initialPeriod, type: initialType }) 
       )}
 
       <p className="flow-foot">
-        Data: Yahoo Finance chart API (3-month daily bars, range=3mo interval=1d). Returns are percent change over the selected window. RVOL = today&apos;s volume ÷ 10-day trailing average. Breadth = fraction of theme tickers in the sector whose 1M return beats SPY.
+        Data: Yahoo Finance chart API (3-month daily bars, range=3mo interval=1d). Returns are percent change over the selected window. RVOL = today&apos;s volume ÷ 10-day trailing average. Breadth = fraction of theme entries (sub-theme rows) in the sector whose 1M return beats SPY — a ticker that appears in several sub-themes is counted once per sub-theme.
         {flow?.unavailable?.length ? ` Unavailable tickers: ${flow.unavailable.join(', ')}.` : ''}
       </p>
     </>
