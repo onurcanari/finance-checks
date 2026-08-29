@@ -12,6 +12,11 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
+## Verification
+- Install: `npm ci --include=dev` (the environment omits devDependencies by default; `.bin` runners need `--include=dev`).
+- Build gate: `npm run build` must complete without errors.
+- Manual check: `npm run dev` and verify changed routes render correctly.
+
 ## Deploy
 - Domain: https://teletext.onurcanari.com (Dokploy, sunucu 140.245.6.201 - Traefik 80/443)
 - Deploy komutu: project-deploy finance-checks
