@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { isHttpLink } from '../../lib/links';
 
 const FEEDS = [
   { source: 'CNBC', url: 'https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=100003114' },
@@ -42,7 +43,7 @@ function parseFeed(xml) {
       return { title, link, publishedAt: Number.isNaN(published.getTime()) ? null : published.toISOString() };
     })
     // Only allow http(s) links through to the client; other schemes are dropped.
-    .filter((item) => item.title && item.link && /^https?:\/\//i.test(item.link));
+    .filter((item) => item.title && item.link && isHttpLink(item.link));
 }
 
 async function fetchFeed(feed) {
