@@ -29,9 +29,11 @@ const LINKS = [['/', 'DASHBOARD', 'dashboard'], ['/metrics', 'COMPARISON', 'comp
 function Drawer({ isOpen, onClose, active }) {
   const drawerRef = useRef(null);
   const closeBtnRef = useRef(null);
+  const controllerRef = useRef(null);
   const [open, setOpen] = useState(false);
   const [swipeX, setSwipeX] = useState(0);
   const [swiping, setSwiping] = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => {
     if (isOpen) {
@@ -55,7 +57,7 @@ function Drawer({ isOpen, onClose, active }) {
     const onKey = (e) => { if (e.key === 'Escape') onClose(); };
     document.addEventListener('keydown', onKey);
     document.body.style.overflow = 'hidden';
-    return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = ''; };
+    return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = ''; controllerRef.current?.abort(); controllerRef.current = null; };
   }, [isOpen, onClose]);
 
   useEffect(() => {
@@ -79,14 +81,18 @@ function Drawer({ isOpen, onClose, active }) {
 
   const onPointerDown = useCallback((e) => {
     if (e.target.closest('.drawer-links') || e.target.closest('.drawer-head')) return;
+    controllerRef.current?.abort();
+    const controller = new AbortController();
+    controllerRef.current = controller;
     const startX = e.clientX;
     setSwiping(true);
     setSwipeX(0);
     const onMove = (ev) => { const dx = ev.clientX - startX; if (dx < 0) setSwipeX(dx); };
-    const onUp = (ev) => { const dx = ev.clientX - startX; if (dx < -60) onClose(); setSwiping(false); setSwipeX(0); };
-    document.addEventListener('pointermove', onMove);
-    document.addEventListener('pointerup', onUp, { once: true });
-    return () => { document.removeEventListener('pointermove', onMove); };
+    const onUp = (ev) => { const dx = ev.clientX - startX; if (dx < -60) onClose(); setSwiping(false); setSwipeX(0); controller.abort(); controllerRef.current = null; };
+    const onCancel = () => { setSwiping(false); setSwipeX(0); controller.abort(); controllerRef.current = null; };
+    document.addEventListener('pointermove', onMove, { signal: controller.signal });
+    document.addEventListener('pointerup', onUp, { signal: controller.signal });
+    document.addEventListener('pointercancel', onCancel, { signal: controller.signal });
   }, [onClose]);
 
   if (!open && !swiping) return null;
@@ -102,7 +108,7 @@ function Drawer({ isOpen, onClose, active }) {
         </div>
         <div className="drawer-links">
           {LINKS.map(([href, label, icon]) => {
-            const isActive = active === label;
+            const isActive = pathname ? pathname === href : active === label;
             return <Link key={label} className={isActive ? 'active' : ''} href={href} title={label} aria-label={label} aria-current={isActive ? 'page' : undefined} onClick={onClose}><NavIcon name={icon} /><span className="drawer-label">{label}</span></Link>;
           })}
         </div>
