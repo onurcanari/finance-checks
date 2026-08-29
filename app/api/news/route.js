@@ -33,26 +33,31 @@ function parseFeed(xml) {
       const published = new Date(pickField(block, 'pubDate'));
       return { title, link, publishedAt: Number.isNaN(published.getTime()) ? null : published.toISOString() };
     })
-    .filter((item) => item.title && item.link);
+    // Only allow http(s) links through to the client; other schemes are dropped.
+    .filter((item) => item.title && item.link && /^https?:\/\//i.test(item.link));
+}
+
+async function fetchFeed(feed) {
+  // Per-feed controller + timeout so one slow feed can't abort the other.
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10_000);
+  try {
+    const response = await fetch(feed.url, {
+      signal: controller.signal,
+      next: { revalidate: 600 },
+    });
+    if (!response.ok) throw new Error(`${feed.source} request failed`);
+    const items = parseFeed(await response.text());
+    if (!items.length) throw new Error(`${feed.source} feed was empty`);
+    return items.map((item) => ({ ...item, source: feed.source }));
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 export async function GET() {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 10_000);
-
   try {
-    const results = await Promise.allSettled(
-      FEEDS.map(async (feed) => {
-        const response = await fetch(feed.url, {
-          signal: controller.signal,
-          next: { revalidate: 600 },
-        });
-        if (!response.ok) throw new Error(`${feed.source} request failed`);
-        const items = parseFeed(await response.text());
-        if (!items.length) throw new Error(`${feed.source} feed was empty`);
-        return items.map((item) => ({ ...item, source: feed.source }));
-      }),
-    );
+    const results = await Promise.allSettled(FEEDS.map(fetchFeed));
 
     if (results.every((result) => result.status === 'rejected')) {
       return NextResponse.json(
@@ -76,7 +81,5 @@ export async function GET() {
       { error: 'News feeds are unavailable.' },
       { status: 502, headers: { 'Cache-Control': 'no-store' } },
     );
-  } finally {
-    clearTimeout(timeout);
   }
 }

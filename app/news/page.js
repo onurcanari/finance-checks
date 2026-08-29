@@ -32,7 +32,10 @@ export default function NewsPage() {
       <div className="panel-title"><span>NEWS FLASH</span><span className="stamp">{ready && data?.updatedAt ? `UPDATED ${clockTime(data.updatedAt, true)}` : 'LIVE WIRE'}</span></div>
       <div className="list">
         {status === 'loading' && <div><span>LOADING...</span></div>}
-        {ready && data.items.map((item) => <div key={item.link} className="news-row"><span className="news-time">{clockTime(item.publishedAt)}</span><span className="news-source">{item.source}</span><a href={item.link} target="_blank" rel="noopener noreferrer">{item.title}</a></div>)}
+        {ready && data.items.map((item, index) => {
+          const safe = /^https?:\/\//i.test(item.link);
+          return <div key={`${item.source}-${index}`} className="news-row"><span className="news-time">{clockTime(item.publishedAt)}</span><span className="news-source">{item.source}</span>{safe ? <a href={item.link} target="_blank" rel="noopener noreferrer">{item.title}</a> : <span>{item.title}</span>}</div>;
+        })}
         {(status === 'error' || status === 'empty') && <div><span className="news-unavailable">NEWSFEED UNAVAILABLE</span></div>}
       </div>
       <div className="status"><span>{ready ? `LIVE · ${data.items.length} HEADLINES · CNBC + YAHOO RSS` : 'LIVE DATA UNAVAILABLE'}</span><button type="button" onClick={load}>REFRESH</button></div>
