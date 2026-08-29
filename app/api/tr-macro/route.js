@@ -3,6 +3,13 @@ import { NextResponse } from 'next/server';
 const SYMBOLS = ['TRY=X', 'GC=F', 'XU100.IS'];
 const GRAM_TROY = 31.1035;
 
+// Convert a "YYYY-MM" month key to a zero-based absolute month index, so the
+// span between two keys can be measured directly in months.
+function monthIndex(key) {
+  const [year, month] = key.split('-').map(Number);
+  return year * 12 + (month - 1);
+}
+
 // Fetch 12 months of monthly closes as a Map of "YYYY-MM" -> close.
 // Mapping by calendar month (rather than array index) keeps pairwise
 // series aligned even when a symbol has missing/extra monthly bars.
@@ -19,12 +26,18 @@ async function monthlyCloses(symbol, signal) {
     const month = new Date(timestamp * 1000).toISOString().slice(0, 7);
     byMonth.set(month, value); // later bars in the same month win
   });
+  // Reject when the earliest->latest month span isn't ~12 months, so the
+  // "12M NOMINAL" label is only used for genuine year-over-year comparisons.
   if (byMonth.size < 2) throw new Error(`${symbol}: incomplete series`);
+  const keys = [...byMonth.keys()];
+  if (Math.abs(monthIndex(keys.at(-1)) - monthIndex(keys[0])) - 12 > 2) {
+    throw new Error(`${symbol}: incomplete 12M coverage`);
+  }
   return byMonth;
 }
 
 function sortedValues(byMonth) {
-  return [...byMonth.entries()].sort((a, b) => (a[0] < b[0] ? -1 : 1)).map(([, value]) => value);
+  return [...byMonth.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([, value]) => value);
 }
 
 function change(series) {
@@ -56,10 +69,12 @@ export async function GET() {
       { symbol: 'XU100.IS', label: 'BIST 100', twelveMonthChange: change(sortedValues(bist)) },
     ];
     return NextResponse.json(
-      { source: 'Yahoo Finance chart API', updatedAt: new Date().toISOString(), rows },
+      { source: 'Yahoo Finance chart API', fetchedAt: new Date().toISOString(), rows },
       { headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200' } },
     );
-  } catch {
+  } catch (error) {
+    // Log the underlying failure for debugging while keeping the public 502.
+    console.error('[tr-macro] failed to build TR macro snapshot:', error);
     return NextResponse.json(
       { error: 'TR macro data is unavailable.' },
       { status: 502, headers: { 'Cache-Control': 'no-store' } },
