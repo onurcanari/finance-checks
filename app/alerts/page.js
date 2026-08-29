@@ -62,10 +62,11 @@ export default function AlertsPage() {
   const evaluatedCount = rows.filter((row) => row.evaluated).length;
   const triggered = rows.filter((row) => row.triggered).length;
   const allEvaluated = evaluatedCount === ALERTS.length;
+  const live = status.startsWith('LIVE');
 
   return <main className="shell"><Header active="ALERTS" stamp="ALERT THRESHOLDS / LIVE EVALUATION" />
-    <section className="panel alert-summary"><div className="panel-title">ALERT STATUS <span className="stamp">CLIENT-SIDE EVALUATION</span></div><div className="alert-summary-body"><div className={`signal ${allEvaluated ? triggered ? 'down' : 'up' : ''}`}>{allEvaluated ? (triggered ? `${triggered} / ${ALERTS.length} ALERTS TRIGGERED` : 'ALL CLEAR') : `${ALERTS.length - evaluatedCount} / ${ALERTS.length} RULES UNAVAILABLE`}</div><div className="stamp">thresholds defined in app/lib/alerts.js</div></div></section>
+    <section className="panel alert-summary"><div className="panel-title">ALERT STATUS <span className="stamp">CLIENT-SIDE EVALUATION</span></div><div className="alert-summary-body"><div className={`signal ${allEvaluated ? triggered ? 'down' : 'up' : ''}`}>{allEvaluated ? (triggered ? `${triggered} / ${ALERTS.length} ALERTS TRIGGERED` : 'ALL CLEAR') : `${triggered} / ${evaluatedCount} RULES TRIGGERED · ${ALERTS.length - evaluatedCount} UNAVAILABLE`}</div><div className="stamp">thresholds defined in app/lib/alerts.js</div></div></section>
     <section className="panel alert-board"><div className="panel-title">THRESHOLD RULES <span className="stamp">SNAPSHOT + EXCHANGE RATE</span></div><div className="table-wrap"><table><thead><tr><th>STATUS</th><th>RULE</th><th>CURRENT</th><th>THRESHOLD</th></tr></thead><tbody>{rows.map(({ rule, current, evaluated, triggered: fired }) => <tr key={rule.label} className={fired ? 'down' : ''}><td><span className={fired ? 'alert-blink' : ''} aria-hidden="true">●</span> {evaluated ? (fired ? 'ALARM' : 'OK') : 'N/A'}</td><td>{rule.label}</td><td>{currentText(rule, current)}</td><td>{thresholdText(rule)}</td></tr>)}</tbody></table></div></section>
-    <div className="status"><span><b className="up">●</b> ALERT THRESHOLDS</span><span>{status}</span><button onClick={load}>REFRESH</button></div><p className="foot">RULES EVALUATED CLIENT-SIDE AGAINST LIVE DATA. NO PERSISTED STATE.</p>
+    <div className="status"><span><b className={live ? 'up' : 'down'}>●</b> ALERT THRESHOLDS</span><span>{status}</span><button onClick={load}>REFRESH</button></div><p className="foot">RULES EVALUATED CLIENT-SIDE AGAINST LIVE DATA. NO PERSISTED STATE.</p>
   </main>;
 }
