@@ -10,6 +10,11 @@ function NavIcon({ name }) {
     comparison: <><path d="M4 19V5m0 14h17" /><path d="m7 15 3-4 3 2 5-7" /><path d="M7 8h3M15 17h3" opacity=".55" /></>,
 fire: <><path d="M12 21c4.2 0 7-2.7 7-6.5 0-3.1-1.7-5.5-4.7-8.5.1 2.7-1 4.2-2.4 5.1.1-3.6-1.5-6.2-4.1-8.1.2 3.7-3.1 5.5-3.1 9.4C4.7 17.8 7.5 21 12 21Z" /><path d="M12 21c-2 0-3.3-1.3-3.3-3.2 0-1.3.8-2.4 2.1-3.7.2 1.3.9 2 1.7 2.4.8-.8 1.2-1.7 1.2-2.8 1.1 1.2 1.7 2.4 1.7 3.8 0 2.1-1.4 3.5-3.4 3.5Z" /><path d="M12 12.5c.8 1 1.2 1.8 1.2 2.6" opacity=".55" /></>,
   portfolio: <><rect x="3" y="8" width="18" height="12" rx="2" /><path d="M9 8V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" /><path d="M3 13h18" opacity=".55" /></>,
+    inflation: <><path d="m4 6 6 6 3-3 7 7" /><path d="M20 11v5h-5" /></>,
+  rates: <><path d="M4 19h16" /><path d="M5 15.5h4.5V11H14V6.5h5" /></>,
+  crypto: <><circle cx="12" cy="12" r="8.5" /><path d="M10 7.5h2.6a2 2 0 0 1 0 4H10zm0 4h3a2 2 0 0 1 0 4h-3zm0-4v8m1.4-9.6v1.6m2-1.6v1.6" /></>,
+  news: <><rect x="3" y="4.5" width="13" height="15" rx="1.5" /><path d="M16 8.5h3a1 1 0 0 1 1 1V17a2.5 2.5 0 0 1-2.5 2.5H5" opacity=".55" /><path d="M6 9h7M6 12.5h7M6 16h4" /></>,
+  calendar: <><rect x="4" y="5.5" width="16" height="15" rx="2" /><path d="M4 10.5h16" /><path d="M8.5 3v4M15.5 3v4" /></>,
   };
   return <svg className={`nav-icon nav-icon-${name}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>;
 }
@@ -20,7 +25,7 @@ function BrandMark() {
 
 export function Header({ active, stamp = 'US EQUITY ROTATION MONITOR / LIVE PRICE DATA' }) {
   const pathname = usePathname();
-  const links = [['/', 'DASHBOARD', 'dashboard'], ['/metrics', 'COMPARISON', 'comparison'], ['/fire', 'FIRE CALCULATOR', 'fire'], ['/portfolio', 'PORTFOLIO', 'portfolio']];
+  const links = [['/', 'DASHBOARD', 'dashboard'], ['/metrics', 'COMPARISON', 'comparison'], ['/fire', 'FIRE CALCULATOR', 'fire'], ['/portfolio', 'PORTFOLIO', 'portfolio'], ['/inflation', 'REAL RETURN', 'inflation'], ['/rates', 'RATES', 'rates'], ['/crypto', 'CRYPTO', 'crypto'], ['/news', 'NEWS', 'news'], ['/calendar', 'CALENDAR', 'calendar']];
   return <header className="topbar" title={stamp}>
     <Link className="rail-brand" href="/" aria-label="FLOW//SECTOR dashboard"><BrandMark /></Link>
     <nav className="nav" aria-label="Primary navigation">
