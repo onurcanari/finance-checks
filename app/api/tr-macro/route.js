@@ -30,7 +30,7 @@ async function monthlyCloses(symbol, signal) {
   // "12M NOMINAL" label is only used for genuine year-over-year comparisons.
   if (byMonth.size < 2) throw new Error(`${symbol}: incomplete series`);
   const keys = [...byMonth.keys()];
-  if (Math.abs(monthIndex(keys.at(-1)) - monthIndex(keys[0])) - 12 > 2) {
+  if (Math.abs((monthIndex(keys.at(-1)) - monthIndex(keys[0])) - 12) > 2) {
     throw new Error(`${symbol}: incomplete 12M coverage`);
   }
   return byMonth;
