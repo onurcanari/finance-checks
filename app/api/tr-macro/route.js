@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-const SYMBOLS = ['TRY=X', 'GC=F', '^XU100'];
+const SYMBOLS = ['TRY=X', 'GC=F', 'XU100.IS'];
 const GRAM_TROY = 31.1035;
 
 async function closes(symbol, signal) {
@@ -59,7 +59,7 @@ export async function GET() {
       rows.push({ symbol: 'TRY=X', label: 'USD/TRY', twelveMonthChange: change(usdTry) });
     }
     if (bist) {
-      rows.push({ symbol: '^XU100', label: 'BIST 100', twelveMonthChange: change(bist) });
+      rows.push({ symbol: 'XU100.IS', label: 'BIST 100', twelveMonthChange: change(bist) });
     }
 
     if (rows.length === 0) {
