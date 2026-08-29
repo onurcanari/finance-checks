@@ -16,6 +16,7 @@ function NavIcon({ name }) {
     news: <><rect x="3" y="4.5" width="13" height="15" rx="1.5" /><path d="M16 8.5h3a1 1 0 0 1 1 1V17a2.5 2.5 0 0 1-2.5 2.5H5" opacity=".55" /><path d="M6 9h7M6 12.5h7M6 16h4" /></>,
     calendar: <><rect x="4" y="5.5" width="16" height="15" rx="2" /><path d="M4 10.5h16" /><path d="M8.5 3v4M15.5 3v4" /></>,
     alerts: <><path d="M18 9a6 6 0 1 0-12 0c0 5-2 6-2 6h16s-2-1-2-6" /><path d="M10.3 19a2 2 0 0 0 3.4 0" /></>,
+    flow: <><path d="M3 7h12M3 12h18M3 17h9" /><path d="M17 14l3 3-3 3" opacity=".7" /><circle cx="6" cy="7" r="1.4" fill="currentColor" stroke="none" /><circle cx="14" cy="12" r="1.4" fill="currentColor" stroke="none" /><circle cx="9" cy="17" r="1.4" fill="currentColor" stroke="none" /></>,
   };
   return <svg className={`nav-icon nav-icon-${name}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>;
 }
@@ -24,7 +25,7 @@ function BrandMark() {
   return <svg viewBox="0 0 28 28" fill="none" aria-hidden="true"><path d="M6 5v18M6 6h13M6 14h10" stroke="currentColor" strokeWidth="3" strokeLinecap="square" /><path d="M21 8v12M24 8v12" stroke="var(--lime)" strokeWidth="2" /></svg>;
 }
 
-const LINKS = [['/', 'DASHBOARD', 'dashboard'], ['/metrics', 'COMPARISON', 'comparison'], ['/fire', 'FIRE CALCULATOR', 'fire'], ['/portfolio', 'PORTFOLIO', 'portfolio'], ['/inflation', 'REAL RETURN', 'inflation'], ['/rates', 'RATES', 'rates'], ['/crypto', 'CRYPTO', 'crypto'], ['/news', 'NEWS', 'news'], ['/calendar', 'CALENDAR', 'calendar'], ['/alerts', 'ALERTS', 'alerts']];
+const LINKS = [['/', 'DASHBOARD', 'dashboard'], ['/metrics', 'COMPARISON', 'comparison'], ['/flow', 'FLOW', 'flow'], ['/fire', 'FIRE CALCULATOR', 'fire'], ['/portfolio', 'PORTFOLIO', 'portfolio'], ['/inflation', 'REAL RETURN', 'inflation'], ['/rates', 'RATES', 'rates'], ['/crypto', 'CRYPTO', 'crypto'], ['/news', 'NEWS', 'news'], ['/calendar', 'CALENDAR', 'calendar'], ['/alerts', 'ALERTS', 'alerts']];
 
 function Drawer({ isOpen, onClose, active }) {
   const drawerRef = useRef(null);
