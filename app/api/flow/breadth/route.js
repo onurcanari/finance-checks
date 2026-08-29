@@ -1,13 +1,12 @@
 import { NextResponse } from 'next/server';
 import {
   SECTORS,
-  THEMES,
-  THEME_SECTORS,
   BENCHMARK,
   allTickers,
   classifyBreadth,
   computePeriodReturns,
   extractCloses,
+  themesBySector,
 } from '../../../lib/flow.js';
 import { fetchChart, CACHE_HEADER } from '../_shared.js';
 
@@ -38,14 +37,9 @@ export async function GET() {
     returnByTicker.set(ticker, tickerReturn(ticker, chartByTicker.get(ticker)));
   }
 
-  // Bucket themes by their declared sector.
-  const themesBySec = new Map();
-  for (const sector of SECTORS) themesBySec.set(sector.name, []);
-  for (const [ticker, name] of THEMES) {
-    const sectorName = THEME_SECTORS[ticker];
-    if (!sectorName || !themesBySec.has(sectorName)) continue;
-    themesBySec.get(sectorName).push({ ticker, name });
-  }
+  // Bucket themes by their declared sector — single source of truth shared
+  // with app/lib/flow.js.
+  const themesBySec = themesBySector();
 
   const result = SECTORS.map(({ ticker, name }) => {
     const sectorReturn1m = returnByTicker.get(ticker);
@@ -53,7 +47,7 @@ export async function GET() {
       ? sectorReturn1m - spyReturn1m
       : null;
 
-    const themeEntries = themesBySec.get(name) || [];
+    const themeEntries = themesBySec[name] || [];
     // Breadth counts *theme entries* (sub-theme rows from THEMES), NOT unique
     // tickers. A single underlying ETF can appear in several sub-themes (e.g.
     // SMH is both Semiconductors and Memory), so it is weighted per sub-theme

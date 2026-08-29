@@ -8,13 +8,7 @@ import {
 } from '../../lib/flow.js';
 import { fetchChart, CACHE_HEADER } from './_shared.js';
 
-function rankSectors(rows) {
-  return rows
-    .filter((row) => Number.isFinite(row.return1m))
-    .sort((a, b) => (b.vsSpy1m ?? -Infinity) - (a.vsSpy1m ?? -Infinity));
-}
-
-function rankThemes(rows) {
+function rankRows(rows) {
   return rows
     .filter((row) => Number.isFinite(row.return1m))
     .sort((a, b) => (b.vsSpy1m ?? -Infinity) - (a.vsSpy1m ?? -Infinity));
@@ -42,8 +36,8 @@ export async function GET() {
   // because each sub-theme has a different descriptive identity.
   const themeRows = THEMES.map(([ticker, name]) => buildRow(ticker, name, chartByTicker.get(ticker), spyRow.return1m));
 
-  const rankedSectors = rankSectors(sectorRows);
-  const rankedThemes = rankThemes(themeRows);
+  const rankedSectors = rankRows(sectorRows);
+  const rankedThemes = rankRows(themeRows);
   const unavailableTickers = tickers.filter((ticker) => !chartByTicker.get(ticker));
 
   return NextResponse.json({

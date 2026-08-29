@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Header, SourceBadge, movement, percent } from '../components';
+import { SourceBadge, movement } from '../components';
 import { directionVerdict, classifyBreadth } from '../lib/flow.js';
 
 const PERIODS = [
