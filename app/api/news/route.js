@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { isHttpLink } from '../../lib/links';
 
 const FEEDS = [
   { source: 'CNBC', url: 'https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=100003114' },
@@ -9,8 +10,16 @@ const ENTITIES = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'" };
 
 function decodeEntities(value) {
   return value
-    .replace(/&#x([0-9a-f]+);/gi, (_, hex) => String.fromCodePoint(parseInt(hex, 16)))
-    .replace(/&#(\d+);/g, (_, dec) => String.fromCodePoint(Number(dec)))
+    // Guard numeric entities against out-of-range code points (> U+10FFFF):
+    // leave them as-is instead of letting String.fromCodePoint throw.
+    .replace(/&#x([0-9a-f]+);/gi, (match, hex) => {
+      const code = parseInt(hex, 16);
+      return code > 0x10ffff ? match : String.fromCodePoint(code);
+    })
+    .replace(/&#(\d+);/g, (match, dec) => {
+      const code = Number(dec);
+      return code > 0x10ffff ? match : String.fromCodePoint(code);
+    })
     .replace(/&([a-z]+);/gi, (match, name) => ENTITIES[name.toLowerCase()] ?? match);
 }
 
@@ -33,26 +42,31 @@ function parseFeed(xml) {
       const published = new Date(pickField(block, 'pubDate'));
       return { title, link, publishedAt: Number.isNaN(published.getTime()) ? null : published.toISOString() };
     })
-    .filter((item) => item.title && item.link);
+    // Only allow http(s) links through to the client; other schemes are dropped.
+    .filter((item) => item.title && item.link && isHttpLink(item.link));
+}
+
+async function fetchFeed(feed) {
+  // Per-feed controller + timeout so one slow feed can't abort the other.
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10_000);
+  try {
+    const response = await fetch(feed.url, {
+      signal: controller.signal,
+      next: { revalidate: 600 },
+    });
+    if (!response.ok) throw new Error(`${feed.source} request failed`);
+    const items = parseFeed(await response.text());
+    if (!items.length) throw new Error(`${feed.source} feed was empty`);
+    return items.map((item) => ({ ...item, source: feed.source }));
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 export async function GET() {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 10_000);
-
   try {
-    const results = await Promise.allSettled(
-      FEEDS.map(async (feed) => {
-        const response = await fetch(feed.url, {
-          signal: controller.signal,
-          next: { revalidate: 600 },
-        });
-        if (!response.ok) throw new Error(`${feed.source} request failed`);
-        const items = parseFeed(await response.text());
-        if (!items.length) throw new Error(`${feed.source} feed was empty`);
-        return items.map((item) => ({ ...item, source: feed.source }));
-      }),
-    );
+    const results = await Promise.allSettled(FEEDS.map(fetchFeed));
 
     if (results.every((result) => result.status === 'rejected')) {
       return NextResponse.json(
@@ -76,7 +90,5 @@ export async function GET() {
       { error: 'News feeds are unavailable.' },
       { status: 502, headers: { 'Cache-Control': 'no-store' } },
     );
-  } finally {
-    clearTimeout(timeout);
   }
 }
