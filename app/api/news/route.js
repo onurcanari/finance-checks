@@ -9,8 +9,16 @@ const ENTITIES = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'" };
 
 function decodeEntities(value) {
   return value
-    .replace(/&#x([0-9a-f]+);/gi, (_, hex) => String.fromCodePoint(parseInt(hex, 16)))
-    .replace(/&#(\d+);/g, (_, dec) => String.fromCodePoint(Number(dec)))
+    // Guard numeric entities against out-of-range code points (> U+10FFFF):
+    // leave them as-is instead of letting String.fromCodePoint throw.
+    .replace(/&#x([0-9a-f]+);/gi, (match, hex) => {
+      const code = parseInt(hex, 16);
+      return code > 0x10ffff ? match : String.fromCodePoint(code);
+    })
+    .replace(/&#(\d+);/g, (match, dec) => {
+      const code = Number(dec);
+      return code > 0x10ffff ? match : String.fromCodePoint(code);
+    })
     .replace(/&([a-z]+);/gi, (match, name) => ENTITIES[name.toLowerCase()] ?? match);
 }
 
