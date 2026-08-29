@@ -25,14 +25,50 @@ export async function GET() {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 10_000);
   try {
-    const [usdTry, goldUsd, bist] = await Promise.all(SYMBOLS.map((symbol) => closes(symbol, controller.signal)));
-    const span = Math.min(usdTry.length, goldUsd.length);
-    const gramTry = usdTry.slice(0, span).map((rate, index) => (goldUsd[index] * rate) / GRAM_TROY);
-    const rows = [
-      { symbol: 'TRY=X', label: 'USD/TRY', twelveMonthChange: change(usdTry) },
-      { symbol: 'XAUTRY-GRAM', label: 'GRAM GOLD (TRY)', twelveMonthChange: change(gramTry) },
-      { symbol: '^XU100', label: 'BIST 100', twelveMonthChange: change(bist) },
-    ];
+    // Fetch each symbol independently so one failure (e.g. a thin BIST series)
+    // never takes down the whole endpoint.
+    const [usdTryRes, goldUsdRes, bistRes] = await Promise.all(
+      SYMBOLS.map(async (symbol) => {
+        try {
+          return { symbol, series: await closes(symbol, controller.signal) };
+        } catch {
+          return { symbol, series: null };
+        }
+      }),
+    );
+
+    const usdTry = usdTryRes.series;
+    const goldUsd = goldUsdRes.series;
+    const bist = bistRes.series;
+
+    const rows = [];
+    if (usdTry && goldUsd) {
+      const span = Math.min(usdTry.length, goldUsd.length);
+      rows.push({
+        symbol: 'TRY=X',
+        label: 'USD/TRY',
+        twelveMonthChange: change(usdTry),
+      });
+      const gramTry = usdTry.slice(0, span).map((rate, index) => (goldUsd[index] * rate) / GRAM_TROY);
+      rows.push({
+        symbol: 'XAUTRY-GRAM',
+        label: 'GRAM GOLD (TRY)',
+        twelveMonthChange: change(gramTry),
+      });
+    } else if (usdTry) {
+      rows.push({ symbol: 'TRY=X', label: 'USD/TRY', twelveMonthChange: change(usdTry) });
+    }
+    if (bist) {
+      rows.push({ symbol: '^XU100', label: 'BIST 100', twelveMonthChange: change(bist) });
+    }
+
+    if (rows.length === 0) {
+      return NextResponse.json(
+        { error: 'TR macro data is unavailable.' },
+        { status: 502, headers: { 'Cache-Control': 'no-store' } },
+      );
+    }
+
     return NextResponse.json(
       { source: 'Yahoo Finance chart API', updatedAt: new Date().toISOString(), rows },
       { headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200' } },
