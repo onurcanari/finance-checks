@@ -15,6 +15,7 @@ fire: <><path d="M12 21c4.2 0 7-2.7 7-6.5 0-3.1-1.7-5.5-4.7-8.5.1 2.7-1 4.2-2.4 
   crypto: <><circle cx="12" cy="12" r="8.5" /><path d="M10 7.5h2.6a2 2 0 0 1 0 4H10zm0 4h3a2 2 0 0 1 0 4h-3zm0-4v8m1.4-9.6v1.6m2-1.6v1.6" /></>,
   news: <><rect x="3" y="4.5" width="13" height="15" rx="1.5" /><path d="M16 8.5h3a1 1 0 0 1 1 1V17a2.5 2.5 0 0 1-2.5 2.5H5" opacity=".55" /><path d="M6 9h7M6 12.5h7M6 16h4" /></>,
   calendar: <><rect x="4" y="5.5" width="16" height="15" rx="2" /><path d="M4 10.5h16" /><path d="M8.5 3v4M15.5 3v4" /></>,
+  alerts: <><path d="M18 9a6 6 0 1 0-12 0c0 5-2 6-2 6h16s-2-1-2-6" /><path d="M10.3 19a2 2 0 0 0 3.4 0" /></>,
   };
   return <svg className={`nav-icon nav-icon-${name}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>;
 }
@@ -25,7 +26,7 @@ function BrandMark() {
 
 export function Header({ active, stamp = 'US EQUITY ROTATION MONITOR / LIVE PRICE DATA' }) {
   const pathname = usePathname();
-  const links = [['/', 'DASHBOARD', 'dashboard'], ['/metrics', 'COMPARISON', 'comparison'], ['/fire', 'FIRE CALCULATOR', 'fire'], ['/portfolio', 'PORTFOLIO', 'portfolio'], ['/inflation', 'REAL RETURN', 'inflation'], ['/rates', 'RATES', 'rates'], ['/crypto', 'CRYPTO', 'crypto'], ['/news', 'NEWS', 'news'], ['/calendar', 'CALENDAR', 'calendar']];
+  const links = [['/', 'DASHBOARD', 'dashboard'], ['/metrics', 'COMPARISON', 'comparison'], ['/fire', 'FIRE CALCULATOR', 'fire'], ['/portfolio', 'PORTFOLIO', 'portfolio'], ['/inflation', 'REAL RETURN', 'inflation'], ['/rates', 'RATES', 'rates'], ['/crypto', 'CRYPTO', 'crypto'], ['/news', 'NEWS', 'news'], ['/calendar', 'CALENDAR', 'calendar'], ['/alerts', 'ALERTS', 'alerts']];
   return <header className="topbar" title={stamp}>
     <Link className="rail-brand" href="/" aria-label="FLOW//SECTOR dashboard"><BrandMark /></Link>
     <nav className="nav" aria-label="Primary navigation">
