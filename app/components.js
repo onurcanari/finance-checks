@@ -29,8 +29,19 @@ const LINKS = [['/', 'DASHBOARD', 'dashboard'], ['/metrics', 'COMPARISON', 'comp
 function Drawer({ isOpen, onClose, active }) {
   const drawerRef = useRef(null);
   const closeBtnRef = useRef(null);
+  const [open, setOpen] = useState(false);
   const [swipeX, setSwipeX] = useState(0);
   const [swiping, setSwiping] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setOpen(false);
+      const id = requestAnimationFrame(() => { void drawerRef.current?.offsetHeight; requestAnimationFrame(() => setOpen(true)); });
+      return () => cancelAnimationFrame(id);
+    } else {
+      setOpen(false);
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen && closeBtnRef.current) {
@@ -47,8 +58,27 @@ function Drawer({ isOpen, onClose, active }) {
     return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = ''; };
   }, [isOpen, onClose]);
 
+  useEffect(() => {
+    if (!isOpen || !drawerRef.current) return;
+    const el = drawerRef.current;
+    const focusable = el.querySelectorAll('a, button, [tabindex]:not([tabindex="-1"])');
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    const onTab = (e) => {
+      if (e.key !== 'Tab') return;
+      if (e.shiftKey) {
+        if (document.activeElement === first) { e.preventDefault(); last?.focus(); }
+      } else {
+        if (document.activeElement === last) { e.preventDefault(); first?.focus(); }
+      }
+    };
+    el.addEventListener('keydown', onTab);
+    return () => el.removeEventListener('keydown', onTab);
+  }, [isOpen]);
+
   const onPointerDown = useCallback((e) => {
-    if (e.target.closest('.drawer-links')) return;
+    if (e.target.closest('.drawer-links') || e.target.closest('.drawer-head')) return;
     const startX = e.clientX;
     setSwiping(true);
     setSwipeX(0);
@@ -59,11 +89,13 @@ function Drawer({ isOpen, onClose, active }) {
     return () => { document.removeEventListener('pointermove', onMove); };
   }, [onClose]);
 
-  if (!isOpen && !swiping) return null;
+  if (!open && !swiping) return null;
+  const transform = swiping ? `translateX(${290 + swipeX}px)` : (open ? 'translateX(0)' : 'translateX(290px)');
+  const transition = swiping ? 'none' : undefined;
   return (
     <>
-      <div className={`drawer-backdrop${isOpen ? ' open' : ''}`} onClick={onClose} aria-hidden="true" />
-      <nav ref={drawerRef} className={`drawer${isOpen ? ' open' : ''}`} role="dialog" aria-modal="true" aria-labelledby="drawer-title" onClick={(e) => { if (e.target === drawerRef.current) onClose(); }} onPointerDown={onPointerDown}>
+      <div className={`drawer-backdrop${open ? ' open' : ''}`} onClick={onClose} aria-hidden="true" />
+      <nav ref={drawerRef} id="nav-drawer" className="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title" style={{ transform, transition }} onClick={(e) => { if (e.target === drawerRef.current) onClose(); }} onPointerDown={onPointerDown}>
         <div className="drawer-head">
           <span id="drawer-title" className="drawer-title">NAVIGATION</span>
           <button ref={closeBtnRef} className="drawer-close" onClick={onClose} aria-label="Close navigation menu">×</button>
