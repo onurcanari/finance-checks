@@ -148,3 +148,7 @@
 @media(max-width:850px){.flow-hero{padding:36px 12px;min-height:auto}.flow-hero-mark{width:108px;height:108px}.flow-strip{grid-template-columns:1fr}.flow-strip-cell{border-right:0;border-bottom:1px solid var(--line)}.flow-strip-cell:last-child{border-bottom:0}}
 @media(max-width:560px){.flow-controls{gap:12px;padding:12px}.flow-controls-meta{width:100%;margin-left:0;justify-content:space-between}.flow-controls-meta .live-pill{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}}
 
+/* STALE badge: shown when a panel is served from cache after a live-fetch
+   failure or quota exhaustion (see app/lib/av-client.js). */
+.stale-badge{display:inline-block;margin-left:6px;padding:2px 7px;border:1px dashed var(--muted);color:var(--muted);font-size:10px;letter-spacing:.08em;vertical-align:middle}
+
