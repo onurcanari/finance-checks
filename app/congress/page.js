@@ -43,8 +43,15 @@ export default function Congress() {
     setStatus('FETCHING CONGRESS TRADES...');
     try {
       const response = await fetch(`/api/congress-trades?symbols=${DEFAULT_SYMBOLS.join(',')}`, { cache: 'no-store' });
+      if (!response.ok) {
+        // Route answered but failed: surface the HTTP status (teletext style)
+        // instead of masking it as a network outage. Never invent data.
+        setData(null);
+        setStaleAt(null);
+        setStatus(`ERROR ${response.status}`);
+        return;
+      }
       const payload = await response.json();
-      if (!response.ok) throw new Error(payload.error);
       setData(payload);
       setProvenance({ source: payload.source, fetchedAt: payload.updatedAt });
 
@@ -58,6 +65,8 @@ export default function Congress() {
         setStatus(`LIVE · ${new Date(payload.updatedAt).toLocaleTimeString('en-US')}`);
       }
     } catch {
+      // Fetch/parse itself threw (network, timeout, malformed body): keep the
+      // generic unavailable message; no data to show.
       setData(null);
       setStaleAt(null);
       setStatus('LIVE DATA UNAVAILABLE');

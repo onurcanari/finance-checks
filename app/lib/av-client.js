@@ -69,6 +69,11 @@ function readCacheFile(file) {
 }
 
 function writeCacheFile(file, entry) {
+  // Note: this write (like writeQuota below) is not atomic — a crash mid-write
+  // can leave a truncated cache file, which readCacheFile() then treats as
+  // missing and the next live call refetches. Accepted risk: the blast radius
+  // is one file for one day (quota counters reset daily), so no fsync/atomic
+  // rename machinery is warranted here.
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, JSON.stringify(entry), 'utf8');
 }
@@ -86,6 +91,9 @@ function readQuota(dir) {
 }
 
 function writeQuota(dir, used) {
+  // Same non-atomic write caveat as writeCacheFile: a crash mid-write can lose
+  // the day's counter; the next successful live call recreates it and the
+  // daily reset caps the impact. Kept deliberately simple (no fsync/rename).
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(quotaFile(dir), JSON.stringify({ date: todayKey(), used }), 'utf8');
 }
@@ -140,15 +148,16 @@ export async function avFetch(func, params = {}, { ttlSeconds = 86_400 } = {}) {
       ? memoryEntry
       : diskEntry;
 
-  // 1. Fresh cache wins outright — no network, no quota.
+  // 1. Fresh cache wins outright — no network, no quota. Payload is cloned so
+  // a mutating consumer cannot corrupt the shared cache layers.
   if (isFresh(cached, ttlSeconds, nowMs)) {
-    return { data: cached.payload, fetchedAt: cached.fetchedAt, stale: false, error: null };
+    return { data: structuredClone(cached.payload), fetchedAt: cached.fetchedAt, stale: false, error: null };
   }
 
   // 2. Daily quota guard: deterministic "always data" even before we dial out.
   if (readQuota(dir) >= dailyLimit()) {
     if (cached) {
-      return { data: cached.payload, fetchedAt: cached.fetchedAt, stale: true, error: 'daily_quota_exhausted' };
+      return { data: structuredClone(cached.payload), fetchedAt: cached.fetchedAt, stale: true, error: 'daily_quota_exhausted' };
     }
     return { data: null, fetchedAt: null, stale: false, error: 'daily_quota_exhausted' };
   }
@@ -182,7 +191,7 @@ export async function avFetch(func, params = {}, { ttlSeconds = 86_400 } = {}) {
     // 4. Live call failed: serve the stale copy with its OLD fetchedAt.
     const reason = error?.name === 'AbortError' ? 'upstream_timeout' : shortReason(error?.message);
     if (cached) {
-      return { data: cached.payload, fetchedAt: cached.fetchedAt, stale: true, error: reason };
+      return { data: structuredClone(cached.payload), fetchedAt: cached.fetchedAt, stale: true, error: reason };
     }
     return { data: null, fetchedAt: null, stale: false, error: reason };
   } finally {
