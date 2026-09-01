@@ -51,6 +51,19 @@ export default function Movers() {
 
   const rows = data?.[tab] || [];
 
+  // Row keys must not embed the array index: count ticker occurrences in
+  // render order — the first instance keeps the bare ticker ('na' when
+  // empty), later ones get a '-N' suffix. Rows are a fixed snapshot replaced
+  // wholesale on refresh, so these occurrence-suffix keys are stable.
+  const rowKeys = [];
+  const tickerOccurrences = new Map();
+  for (const mover of rows) {
+    const base = mover.ticker || 'na';
+    const occurrence = (tickerOccurrences.get(base) || 0) + 1;
+    tickerOccurrences.set(base, occurrence);
+    rowKeys.push(base + (occurrence > 1 ? '-' + occurrence : ''));
+  }
+
   return <main className="shell"><Header active="MOVERS" stamp="TOP MOVERS / US MARKET" />
     <section className="panel market-board"><div className="panel-title">TOP MOVERS <span className="stamp">GAINERS · LOSERS · MOST ACTIVE</span></div>
       {data && !rows.length && <p className="market-empty">No {tab === 'active' ? 'most-active' : tab} data in the current market snapshot.</p>}
@@ -61,7 +74,7 @@ export default function Movers() {
         <thead><tr><th scope="col">TICKER</th><th scope="col">PRICE</th><th scope="col">CHANGE</th><th scope="col">% CHG</th><th scope="col">VOLUME</th></tr></thead>
         <tbody>
           {rows.map((mover, index) => (
-            <tr key={`${mover.ticker || 'na'}-${index}`} className={mover.unavailable ? 'unavailable' : ''}>
+            <tr key={rowKeys[index]} className={mover.unavailable ? 'unavailable' : ''}>
               <td><b>{mover.ticker || 'N/A'}</b></td>
               <td>{formatPrice(mover.price)}</td>
               <td className={mover.changeAmount > 0 ? 'up' : mover.changeAmount < 0 ? 'down' : ''}>{formatChange(mover.changeAmount)}</td>
