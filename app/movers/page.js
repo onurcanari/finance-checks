@@ -1,12 +1,10 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { Header, SourceBadge } from '../components';
+import { useEffect, useState } from 'react';
+import { Header, SourceBadge, formatPrice } from '../components';
 import { MOVERS_TABS } from '../lib/movers';
 
-// price -> fixed 2-4 decimals like every other money column in the app;
 // volume -> grouped thousands via toLocaleString (contract requires en-US).
-const formatPrice = (value) => (Number.isFinite(value) ? value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 }) : '-');
 const formatVolume = (value) => (Number.isFinite(value) ? value.toLocaleString('en-US') : '-');
 const formatChange = (value) => (Number.isFinite(value) ? (value > 0 ? '+' : '') + value.toFixed(2) : '-');
 // AV's last_updated ("2026-08-31 16:15:56 US/Eastern") is not a format
@@ -51,13 +49,13 @@ export default function Movers() {
 
   useEffect(() => { load(); }, []);
 
-  const rows = useMemo(() => (data?.[tab] || []), [data, tab]);
+  const rows = data?.[tab] || [];
 
   return <main className="shell"><Header active="MOVERS" stamp="TOP MOVERS / US MARKET" />
     <section className="panel market-board"><div className="panel-title">TOP MOVERS <span className="stamp">GAINERS · LOSERS · MOST ACTIVE</span></div>
       {data && !rows.length && <p className="market-empty">No {tab === 'active' ? 'most-active' : tab} data in the current market snapshot.</p>}
-      <div className="market-filters" role="tablist" aria-label="Top movers views">
-        {MOVERS_TABS.map(({ key, label }) => <button key={key} type="button" role="tab" aria-selected={tab === key} className={tab === key ? 'active' : ''} onClick={() => setTab(key)}>{label}</button>)}
+      <div className="market-filters" aria-label="Top movers views">
+        {MOVERS_TABS.map(({ key, label }) => <button key={key} type="button" aria-pressed={tab === key} className={tab === key ? 'active' : ''} onClick={() => setTab(key)}>{label}</button>)}
       </div>
       <div className="market-table-wrap"><table className="market-table">
         <thead><tr><th scope="col">TICKER</th><th scope="col">PRICE</th><th scope="col">CHANGE</th><th scope="col">% CHG</th><th scope="col">VOLUME</th></tr></thead>
