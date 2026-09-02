@@ -15,7 +15,13 @@ export const YAHOO_RANGE = '3mo';
 export const YAHOO_INTERVAL = '1d';
 export const TIMEOUT_MS = 12_000;
 export const CACHE_HEADER = 'public, s-maxage=120, stale-while-revalidate=600';
-export const USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36';
+// NOTE: deliberately NO User-Agent header on Yahoo requests. Yahoo's bot
+// protection (observed 2026-09-02) intermittently 429s requests that carry a
+// browser-like UA while serving header-less requests fine — the exact inverse
+// of what the UA was supposed to achieve. Every other Yahoo route in this app
+// (market-snapshot, rates, crypto, tr-macro) fetches with NO custom headers and
+// stays reliable. Do not reintroduce a UA here; if Yahoo starts blocking again,
+// gate on the `unavailable` array in the /api/flow response instead.
 
 // Pull a Yahoo chart for one ticker. Returns null on any failure (network,
 // 429, 404, malformed payload) — callers treat null as "unavailable" so one
@@ -27,7 +33,6 @@ export async function fetchChart(ticker) {
     const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?range=${YAHOO_RANGE}&interval=${YAHOO_INTERVAL}`;
     const response = await fetch(url, {
       signal: controller.signal,
-      headers: { 'User-Agent': USER_AGENT, Accept: 'application/json' },
       cache: 'no-store',
     });
     if (!response.ok) return null;
