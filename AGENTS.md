@@ -2,6 +2,14 @@
 
 Use English exclusively for all user-facing responses, code comments, documentation, and generated text unless the user explicitly asks otherwise.
 
+## Build & test
+
+- `npm install --include=dev` — install deps (this env's `omit=dev` would otherwise skip devDependencies, breaking `next build`)
+- `npm run build` — production build (catches routing, server/client boundary, and TypeScript errors)
+- `node --test app/lib/flow.test.js` — unit tests for the flow layer (pure helpers, no network)
+- `node scripts/smoke-flow.mjs` — integration smoke test for `/api/flow` and `/api/flow/breadth` with canned chart data; verifies the assembled JSON shape and ranking/breadth/RVOL invariants without depending on Yahoo
+- `npm run dev` then `curl -s http://127.0.0.1:3000/api/flow | head -c 200` — manual smoke against the live data source
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 # This is NOT the Next.js you know
@@ -15,3 +23,6 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 ## Deploy
 - Domain: https://teletext.onurcanari.com (Dokploy, sunucu 140.245.6.201 - Traefik 80/443)
 - Deploy komutu: project-deploy finance-checks
+
+## Option data
+Option data (used by `/api/options/*` routes): `TRADIER_API_KEY` env var required at runtime. Set in `.env.local` for local, in the deploy environment for production. Without it the routes return `500 {error: "config_missing"}`.
