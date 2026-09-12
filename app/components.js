@@ -20,6 +20,7 @@ function NavIcon({ name }) {
     congress: <><path d="M5 21h14" /><path d="M6 21V10M10 21V10M14 21V10M18 21V10" /><path d="m4 10 8-6 8 6" /><path d="M9 3v2m6-2v2" opacity=".55" /></>,
     skew: <><path d="M3 12h4l2-6 4 12 2-6h6" /></>,
     movers: <><path d="M4 17l5-5 4 4 7-7" /><path d="M20 7l-5 5-4-4-7 7" opacity=".55" /></>,
+    supplychain: <><circle cx="12" cy="12" r="2.4" /><circle cx="4" cy="5" r="1.6" /><circle cx="4" cy="19" r="1.6" /><circle cx="20" cy="7" r="1.6" /><circle cx="20" cy="17" r="1.6" /><path d="M5.5 5.6 9.8 10.6M5.5 18.4 9.8 13.4M14.2 10.9 18.5 7.9M14.2 13.1 18.5 16.1" /></>,
   };
   return <svg className={`nav-icon nav-icon-${name}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>;
 }
@@ -28,7 +29,7 @@ function BrandMark() {
   return <svg viewBox="0 0 28 28" fill="none" aria-hidden="true"><path d="M6 5v18M6 6h13M6 14h10" stroke="currentColor" strokeWidth="3" strokeLinecap="square" /><path d="M21 8v12M24 8v12" stroke="var(--lime)" strokeWidth="2" /></svg>;
 }
 
-const LINKS = [['/', 'DASHBOARD', 'dashboard'], ['/metrics', 'COMPARISON', 'comparison'], ['/flow', 'FLOW', 'flow'], ['/fire', 'FIRE CALCULATOR', 'fire'], ['/portfolio', 'PORTFOLIO', 'portfolio'], ['/inflation', 'REAL RETURN', 'inflation'], ['/rates', 'RATES', 'rates'], ['/crypto', 'CRYPTO', 'crypto'], ['/news', 'NEWS', 'news'], ['/calendar', 'CALENDAR', 'calendar'], ['/alerts', 'ALERTS', 'alerts'], ['/congress', 'CONGRESS', 'congress'], ['/skew', 'SKEW', 'skew'], ['/movers', 'MOVERS', 'movers']];
+const LINKS = [['/', 'DASHBOARD', 'dashboard'], ['/metrics', 'COMPARISON', 'comparison'], ['/flow', 'FLOW', 'flow'], ['/fire', 'FIRE CALCULATOR', 'fire'], ['/portfolio', 'PORTFOLIO', 'portfolio'], ['/inflation', 'REAL RETURN', 'inflation'], ['/rates', 'RATES', 'rates'], ['/crypto', 'CRYPTO', 'crypto'], ['/news', 'NEWS', 'news'], ['/calendar', 'CALENDAR', 'calendar'], ['/alerts', 'ALERTS', 'alerts'], ['/congress', 'CONGRESS', 'congress'], ['/skew', 'SKEW', 'skew'], ['/movers', 'MOVERS', 'movers'], ['/supply-chain', 'SUPPLY CHAIN', 'supplychain']];
 
 function Drawer({ isOpen, onClose, active }) {
   const drawerRef = useRef(null);
